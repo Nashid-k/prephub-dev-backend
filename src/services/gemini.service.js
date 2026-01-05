@@ -45,17 +45,17 @@ const setCacheValue = async (key, value, ttlSeconds = 3600 * 24 * 7) => {
  */
 const getEliteAnalysis = (topic, section, context = '', level = 'advanced') => {
   const combined = `${topic} ${section} ${context}`.toLowerCase();
-  
+
   // 1. Determine Tech Stack & Hard Requirements (Stack specific remains same)
   let techRequirements = [];
-  
+
   if (combined.includes('javascript') || combined.includes('node') || combined.includes('v8')) {
     techRequirements.push("Mention memory management (Garbage Collection implications).");
     if (level === 'advanced') {
       techRequirements.push("Discuss V8 Engine internals (Call Stack, Heap, Event Loop).");
     }
   }
-  
+
   if (combined.includes('react') || combined.includes('frontend')) {
     techRequirements.push("Strictly separate logic (Hooks) from UI.");
     if (level === 'advanced') {
@@ -63,31 +63,47 @@ const getEliteAnalysis = (topic, section, context = '', level = 'advanced') => {
     }
   }
 
-  // 2. Determine "Persona" based on Experience Level
+  // 2. Determine "Persona" based on Topic Domain (1000x Intelligence)
   let persona = "Senior Principal Engineer";
   let tone = "Authoritative, insightful, and practical.";
   let focus = "Internal mechanics, scaling, and trade-offs.";
 
+  // Domain Intelligence Matrix
+  if (combined.includes('git') || combined.includes('cli') || combined.includes('linux')) {
+    persona = "Linux Kernel Maintainer & DevOps Lead";
+    focus = "Atomic commits, history purity, graph topology (DAG), and safe collaboration.";
+    techRequirements.push("Explain the 'Git Object Model' (Blob, Tree, Commit) if relevant.");
+    techRequirements.push("Warn about destructive commands (reset --hard, force push).");
+  } else if (combined.includes('system design') || combined.includes('architecture')) {
+    persona = "Principal Cloud Architect (FAANG Level)";
+    focus = "Scalability, Fault Tolerance, CAP Theorem, and Trade-offs (Latency vs Consistency).";
+    techRequirements.push("Always mention 'Bottlenecks' and 'Single Points of Failure'.");
+  } else if (combined.includes('database') || combined.includes('sql') || combined.includes('postgres')) {
+    persona = "Database Administrator & Query Optimizer";
+    focus = "ACID properties, Indexing strategies (B-Tree), and Query Execution Plans.";
+  } else if (combined.includes('algorithm') || combined.includes('dsa') || combined.includes('leetcode')) {
+    persona = "Competitive Programming World Finalist";
+    focus = "Time Complexity (Big O), Space Complexity, and Edge Cases.";
+  } else if (combined.includes('security') || combined.includes('auth')) {
+    persona = "Chief Information Security Officer (CISO)";
+    focus = "Attack vectors (OWASP), Encryption standards, and Zero Trust principles.";
+  }
+
   switch (level) {
     case 'beginner':
-      persona = "Patient Mentor & Senior Teacher";
-      tone = "Encouraging, clear, and analogy-rich. Avoids jargon where possible.";
-      focus = "Foundational concepts, 'Mental Models', and 'Why this matters'.";
-      techRequirements = ["Use real-world analogies.", "Explain 'magic' words simply."];
+      tone = `Encouraging and analogy-rich. You are a ${persona} teaching a complete novice.`;
+      techRequirements.push("Use real-world analogies (e.g., Git as a Time Machine).");
       break;
-    
+
     case 'intermediate':
-      persona = "Senior Colleague / Team Lead";
-      tone = "Professional, pragmatic, and focused on best practices.";
-      focus = "Clean code, common pitfalls, and industry standards.";
-      techRequirements.push("Focus on 'How we do this in production'.");
+      tone = `Professional and pragmatic. You are a ${persona} code-reviewing a mid-level dev.`;
+      focus += " Focus on Best Practices and Production Standards.";
       break;
 
     case 'advanced':
     default:
-      persona = "Distinguished Systems Architect";
-      tone = "Deeply technical, no-fluff, 'internals-first'.";
-      focus = "Memory layout, assembly/bytecode, race conditions, and heavy trade-offs.";
+      tone = `Deeply technical and concise. You are a ${persona} talking to another expert.`;
+      focus += " Focus on Internals, Memory Layouts, and Compiler Optimizations.";
       break;
   }
 
@@ -100,7 +116,7 @@ const getEliteAnalysis = (topic, section, context = '', level = 'advanced') => {
 export const generateExplanation = async (topic, section, context = '', language = 'javascript', level = 'advanced') => {
   const contextHash = context ? Buffer.from(context).toString('base64').substring(0, 50) : 'no_context';
   const baseCacheKey = `explain_v2_${level}_${topic}_${section}_${contextHash}`;
-  
+
   const cached = await getCacheValue(baseCacheKey);
   if (cached) return cached;
 
@@ -111,9 +127,9 @@ You are a ${analysis.persona}.
 Your task is to write a guide on **"${section}"** (Topic: ${topic}) for a **${level.toUpperCase()}** audience.
 
 **TARGET AUDIENCE**: 
-${level === 'beginner' ? "Students asking 'Why?'. Identify confusion early." : 
-  level === 'intermediate' ? "Junior Devs wanting to be Seniors. Focus on 'How to do it right'." : 
-  "Elite Engineers wanting Internals. Focus on 'How it breaks'."}
+${level === 'beginner' ? "Students asking 'Why?'. Identify confusion early." :
+      level === 'intermediate' ? "Junior Devs wanting to be Seniors. Focus on 'How to do it right'." :
+        "Elite Engineers wanting Internals. Focus on 'How it breaks'."}
 
 **TONE & FOCUS**:
 - ${analysis.tone}
@@ -124,7 +140,35 @@ ${analysis.techRequirements.map(req => `- ${req}`).join('\n')}
 - Code Language: **${language.toUpperCase()}**
 
 **CONTENT STRUCTURE (Strict Markdown)**:
+${(topic.toLowerCase().includes('git') || topic.toLowerCase().includes('cli')) ? `
+### ${section}
 
+#### 🏗️ Context & Concept
+(Brief theory. Why do we need this command?)
+
+#### 💻 Command Usage
+\`\`\`bash
+# ${level.toUpperCase()} Example
+git command --flags
+\`\`\`
+
+#### 🔬 Internals (The .git folder)
+(What happens in the .git directory? Refs? Objects?)
+
+#### ⚠️ Dangers & Trade-offs
+(When does this break things? How to recover?)
+` : (topic.toLowerCase().includes('design') || topic.toLowerCase().includes('architecture')) ? `
+### ${section}
+
+#### 🏗️ High-Level Design
+(The big picture. Use text-based diagram if possible using Mermaid syntax)
+
+#### 🔬 Component Internals
+(Deep dive into specific components)
+
+#### ⚔️ Trade-offs (CAP Theorem / Constraints)
+(Latency vs Consistency? Throughput vs Durability?)
+` : `
 ### ${section}
 
 #### ${level === 'beginner' ? '🌱 Concept' : '🏗️ Context'}
@@ -137,12 +181,13 @@ ${analysis.techRequirements.map(req => `- ${req}`).join('\n')}
 (${level === 'beginner' ? 'What do beginners get wrong?' : 'When NOT to use this. Pros/Cons.'})
 
 #### 💻 ${level === 'beginner' ? 'Simple Example' : 'Production Implementation'}
-\`\`\`${language}
+\`\`\`${activeLanguage}
 // ${level.toUpperCase()} Example
 \`\`\`
 
 #### ${level === 'beginner' ? '🧠 Remember This' : '🧠 Mental Model'}
 (${level === 'beginner' ? 'A simple rule of thumb.' : 'A sophisticated framework for thinking about this.'})
+`}
 
 Generate now:
 `;
@@ -210,15 +255,15 @@ CODE CONTEXT: ${context.currentCode ? `\n\`\`\`${language}\n${context.currentCod
 export const generateQuiz = async (topic, section, regenerate = false, language = 'javascript', content = '', level = 'advanced') => {
   const baseKey = `quiz_v2_${level}_${topic}_${section}_${language}`;
   const cacheKey = regenerate ? `${baseKey}_${Date.now()}` : baseKey;
-  
+
   if (!regenerate) {
     const cached = await getCacheValue(baseKey);
     if (cached) return cached;
   }
 
-  const focus = level === 'beginner' ? "Fundamentals & Syntax" : 
-                level === 'intermediate' ? "Patterns & Best Practices" : 
-                "Internals, Trade-offs & Debugging";
+  const focus = level === 'beginner' ? "Fundamentals & Syntax" :
+    level === 'intermediate' ? "Patterns & Best Practices" :
+      "Internals, Trade-offs & Debugging";
 
   const prompt = `
 Generate 5 **${level.toUpperCase()} LEVEL** Interview Questions.
@@ -245,8 +290,8 @@ FOCUS: ${focus}
   try {
     const result = await aiService.generateJSON(prompt);
     if (Array.isArray(result)) {
-        await setCacheValue(baseKey, result);
-        return result;
+      await setCacheValue(baseKey, result);
+      return result;
     }
   } catch (error) {
     console.error('❌ Quiz Generation Failed:', error.message);
@@ -259,7 +304,7 @@ FOCUS: ${focus}
  */
 export const structureLearningPath = async (topics, pathName, level = 'advanced') => {
   const cacheKey = `path_structure_${level}_${pathName}_${topics ? topics.length : 0}`;
-  
+
   const cached = await getCacheValue(cacheKey);
   if (cached) return cached;
 
@@ -304,7 +349,7 @@ export const structureLearningPath = async (topics, pathName, level = 'advanced'
 export const translateCodeBlock = async (code, sourceLanguage, targetLanguage) => {
   const codeHash = Buffer.from(code).toString('base64').substring(0, 50);
   const cacheKey = `translate_${sourceLanguage}_${targetLanguage}_${codeHash}`;
-  
+
   const cached = await getCacheValue(cacheKey);
   if (cached) return cached;
 
@@ -325,7 +370,7 @@ export const translateCodeBlock = async (code, sourceLanguage, targetLanguage) =
     let translated = await aiService.generateText(prompt);
     // Cleanup markdown if present
     translated = translated.replace(/```[a-z]*\n?/ig, '').replace(/```$/g, '');
-    
+
     await setCacheValue(cacheKey, translated);
     return translated;
   } catch (error) {
@@ -340,7 +385,7 @@ export const translateCodeBlock = async (code, sourceLanguage, targetLanguage) =
 export const analyzeCode = async (code, mode = 'review', language = 'javascript', level = 'advanced') => {
   const codeHash = Buffer.from(code).toString('base64').substring(0, 50);
   const cacheKey = `analyze_v2_${level}_${mode}_${language}_${codeHash}`;
-  
+
   const cached = await getCacheValue(cacheKey);
   if (cached) return cached;
 
@@ -349,21 +394,21 @@ export const analyzeCode = async (code, mode = 'review', language = 'javascript'
   let tone = level === 'beginner' ? "Educational & Encouraging" : "Professional & Strict";
 
   // Customize Persona based on Mode AND Level
-  switch(mode) {
+  switch (mode) {
     case 'debug':
       persona = level === 'beginner' ? "Friendly Debugging Mentor" : "Systems Debugger & Root Cause Analyst";
-      task = level === 'beginner' 
-        ? "Explain the bug simply. Show how to fix it step-by-step." 
+      task = level === 'beginner'
+        ? "Explain the bug simply. Show how to fix it step-by-step."
         : "Find logic errors, race conditions. IGNORE style. Fix it efficiently.";
       break;
-    
+
     case 'optimize':
       persona = level === 'beginner' ? "Code Optimization Guide" : "Performance Architect (HFT)";
       task = level === 'beginner'
         ? "Show a faster way to do this. Explain why loops are slow."
         : "Analyze Big O. Optimize for Cache Locality, Memory Allocations.";
       break;
-    
+
     case 'review':
     default:
       persona = level === 'beginner' ? "Code Review Mentor" : "Principal Security Engineer";
