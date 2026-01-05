@@ -6,10 +6,17 @@ const connectedUsers = new Map(); // userId -> { socketId, userData }
 const activeVisitors = new Set(); // track total active connections including guests
 
 export const initSocket = (server) => {
+    const allowedOrigins = [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        process.env.FRONTEND_URL
+    ].filter(Boolean);
+
     io = new Server(server, {
         cors: {
-            origin: process.env.FRONTEND_URL || '*', // Allow all for dev, restrict in prod
-            methods: ['GET', 'POST']
+            origin: allowedOrigins,
+            methods: ['GET', 'POST'],
+            credentials: true
         }
     });
 
