@@ -1,6 +1,6 @@
 import express from 'express';
 import { checkUsername, completeOnboarding, getOnboardingStatus } from '../controllers/onboarding.controller.js';
-import authMiddleware from '../middleware/auth.middleware.js';
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -8,9 +8,9 @@ const router = express.Router();
 router.post('/check-username', checkUsername);
 
 // Complete onboarding (auth required)
-router.post('/complete', authMiddleware, completeOnboarding);
+router.post('/complete', protect, completeOnboarding);
 
 // Get onboarding status (auth required)
-router.get('/status', authMiddleware, getOnboardingStatus);
+router.get('/status', protect, getOnboardingStatus);
 
 export default router;
