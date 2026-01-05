@@ -1,5 +1,7 @@
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
+import Redis from 'ioredis';
+import { createAdapter } from '@socket.io/redis-adapter';
 
 let io;
 const connectedUsers = new Map(); // userId -> { socketId, userData }
@@ -30,6 +32,19 @@ export const initSocket = (server) => {
             credentials: true
         }
     });
+
+    // 100x Upgrade: Redis Adapter for Scaling
+    if (process.env.REDIS_URL) {
+        try {
+            const pubClient = new Redis(process.env.REDIS_URL);
+            const subClient = pubClient.duplicate();
+
+            io.adapter(createAdapter(pubClient, subClient));
+            console.log('🚀 Socket.io Scale: Redis Adapter Active');
+        } catch (e) {
+            console.error('⚠️ Redis Adapter Init Failed:', e.message);
+        }
+    }
 
     io.use((socket, next) => {
         const token = socket.handshake.auth.token;
