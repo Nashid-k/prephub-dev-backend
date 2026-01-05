@@ -18,6 +18,7 @@ import bookmarkRoutes from './routes/bookmark.routes.js';
 import recommendationsRoutes from './routes/recommendations.routes.js';
 import activityRoutes from './routes/activity.routes.js';
 import healthRoutes from './routes/health.routes.js';
+import onboardingRoutes from './routes/onboarding.routes.js';
 
 
 import { helmetConfig, corsOptions, apiLimiter } from './middleware/security.js';
@@ -65,6 +66,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/activity', activityRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Health check (enhanced for Render & UptimeRobot)
 app.use('/api/health', healthRoutes);

@@ -56,6 +56,13 @@ export const googleLogin = async (req, res) => {
       picture: user.picture,
       token: generateToken(user._id),
       isNew: isNewUser,
+      // Onboarding fields
+      onboardingCompleted: user.onboardingCompleted || false,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      goals: user.goals,
+      skills: user.skills,
     });
   } catch (error) {
     console.error('Google Auth Error:', error);
