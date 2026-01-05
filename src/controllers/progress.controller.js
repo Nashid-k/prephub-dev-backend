@@ -6,7 +6,7 @@ import Category from '../models/Category.js';
 export const toggleSectionCompletion = async (req, res) => {
   try {
     const { topicSlug, sectionSlug, completed } = req.body;
-    
+
     // Generate unique user ID for anonymous users
     let userId;
     if (req.user) {
@@ -38,9 +38,9 @@ export const toggleSectionCompletion = async (req, res) => {
 
     await progress.save();
 
-    res.json({ 
-      success: true, 
-      isCompleted: progress.completed 
+    res.json({
+      success: true,
+      isCompleted: progress.completed
     });
 
   } catch (error) {
@@ -62,12 +62,12 @@ export const getSectionProgress = async (req, res) => {
     let isCompleted = false;
 
     if (userId) {
-        const progress = await Progress.findOne({ userId, sectionId: section._id });
-        if (progress) isCompleted = progress.completed;
+      const progress = await Progress.findOne({ userId, sectionId: section._id });
+      if (progress) isCompleted = progress.completed;
     }
 
     res.json({
-        isCompleted
+      isCompleted
     });
 
   } catch (error) {
@@ -84,12 +84,12 @@ export const getCategoryProgress = async (req, res) => {
     // 1. Find Topic and Category IDs
     const topic = await Topic.findOne({ slug: topicSlug }).lean();
     if (!topic) {
-        return res.status(404).json({ message: 'Topic not found' });
+      return res.status(404).json({ message: 'Topic not found' });
     }
 
     const category = await Category.findOne({ slug: categorySlug, topicId: topic._id }).lean();
     if (!category) {
-        return res.status(404).json({ message: 'Category not found' });
+      return res.status(404).json({ message: 'Category not found' });
     }
 
     // 2. Find all sections for this category
@@ -98,20 +98,20 @@ export const getCategoryProgress = async (req, res) => {
 
     // 4. Create a map of { sectionSlug: isCompleted }
     const progressMap = {};
-    
-    if (!userId) {
-        // If no user, all are false
-        sections.forEach(s => progressMap[s.slug] = false);
-    } else {
-        const progressRecords = await Progress.find({ 
-            userId, 
-            sectionId: { $in: sectionIds } 
-        });
 
-        sections.forEach(section => {
-            const record = progressRecords.find(p => p.sectionId.toString() === section._id.toString());
-            progressMap[section.slug] = record ? record.completed : false;
-        });
+    if (!userId) {
+      // If no user, all are false
+      sections.forEach(s => progressMap[s.slug] = false);
+    } else {
+      const progressRecords = await Progress.find({
+        userId,
+        sectionId: { $in: sectionIds }
+      });
+
+      sections.forEach(section => {
+        const record = progressRecords.find(p => p.sectionId.toString() === section._id.toString());
+        progressMap[section.slug] = record ? record.completed : false;
+      });
     }
 
     res.json({ progress: progressMap });
@@ -130,17 +130,17 @@ export const getTopicProgress = async (req, res) => {
     // 1. Find Topic
     const topic = await Topic.findOne({ slug: topicSlug }).lean();
     if (!topic) {
-        return res.status(404).json({ message: 'Topic not found' });
+      return res.status(404).json({ message: 'Topic not found' });
     }
 
     // 2. Find all Categories for this topic
     const categories = await Category.find({ topicId: topic._id }).lean();
-    
+
     // 3. Find all Sections for these categories
     // We need to group sections by category to check completion
     const categoryIds = categories.map(c => c._id);
     const sections = await Section.find({ categoryId: { $in: categoryIds } }).lean();
-    
+
     // 4. Find all Progress for these sections
     const sectionIds = sections.map(s => s._id);
     // 5. Build the map { categorySlug: isCompleted }
@@ -149,10 +149,10 @@ export const getTopicProgress = async (req, res) => {
     // Get progress records ONLY if user exists
     let progressRecords = [];
     if (userId) {
-        progressRecords = await Progress.find({ 
-            userId, 
-            sectionId: { $in: sectionIds } 
-        });
+      progressRecords = await Progress.find({
+        userId,
+        sectionId: { $in: sectionIds }
+      });
     }
 
     // Calculate overall stats
@@ -160,41 +160,41 @@ export const getTopicProgress = async (req, res) => {
     let completedSections = 0;
 
     categories.forEach(category => {
-        // Get sections for this specific category
-        const categorySections = sections.filter(s => s.categoryId.toString() === category._id.toString());
-        
-        if (categorySections.length === 0 || !userId) {
-            progressMap[category.slug] = false; 
-        } else {
-            // Check if ALL sections are completed for the category map
-            const allCompleted = categorySections.every(section => {
-                const record = progressRecords.find(p => p.sectionId.toString() === section._id.toString());
-                const isComplete = record && record.completed;
-                if (isComplete) {
-                    // This logic is slightly flawed for global count if we iterate categories, 
-                    // but we can just count global progress separately or counting here carefully.
-                    // Actually, simpler to count from progressRecords that match sectionIds.
-                }
-                return isComplete;
-            });
-            progressMap[category.slug] = allCompleted;
-        }
+      // Get sections for this specific category
+      const categorySections = sections.filter(s => s.categoryId.toString() === category._id.toString());
+
+      if (categorySections.length === 0 || !userId) {
+        progressMap[category.slug] = false;
+      } else {
+        // Check if ALL sections are completed for the category map
+        const allCompleted = categorySections.every(section => {
+          const record = progressRecords.find(p => p.sectionId.toString() === section._id.toString());
+          const isComplete = record && record.completed;
+          if (isComplete) {
+            // This logic is slightly flawed for global count if we iterate categories, 
+            // but we can just count global progress separately or counting here carefully.
+            // Actually, simpler to count from progressRecords that match sectionIds.
+          }
+          return isComplete;
+        });
+        progressMap[category.slug] = allCompleted;
+      }
     });
 
     // Count actual completed sections from the records that match our topic's sections
     if (userId) {
-        completedSections = progressRecords.filter(p => p.completed).length;
+      completedSections = progressRecords.filter(p => p.completed).length;
     }
 
     const percentage = totalSections > 0 ? Math.round((completedSections / totalSections) * 100) : 0;
 
-    res.json({ 
-        progress: progressMap,
-        stats: {
-            totalSections,
-            completedSections,
-            percentage
-        }
+    res.json({
+      progress: progressMap,
+      stats: {
+        totalSections,
+        completedSections,
+        percentage
+      }
     });
 
   } catch (error) {
@@ -211,7 +211,7 @@ export const getAllTopicsProgress = async (req, res) => {
     } else {
       userId = req.headers['x-session-id'] || 'default-user';
     }
-    
+
     // Ensure userId is string for comparison since Progress stores it as String
     userId = userId.toString();
 
@@ -339,7 +339,7 @@ export const getAllTopicsProgress = async (req, res) => {
 export const updateTimeSpent = async (req, res) => {
   try {
     const { topicSlug, sectionSlug, minutes } = req.body;
-    
+
     // Get user ID
     let userId;
     if (req.user) {
@@ -371,9 +371,9 @@ export const updateTimeSpent = async (req, res) => {
 
     await progress.save();
 
-    res.json({ 
-      success: true, 
-      timeSpent: progress.timeSpent 
+    res.json({
+      success: true,
+      timeSpent: progress.timeSpent
     });
 
   } catch (error) {
@@ -392,39 +392,57 @@ export const getDueReviews = async (req, res) => {
       userId = req.headers['x-session-id'] || 'default-user';
     }
 
-    // Find all completed progress with review data
-    const progressRecords = await Progress.find({
-      userId,
-      completed: true,
-      'reviewData.nextReview': { $lte: new Date() } // Due for review
-    }).populate('sectionId');
-
-    // Enrich with topic and category info
-    const enrichedReviews = [];
-    for (const progress of progressRecords) {
-      if (!progress.sectionId) continue;
-
-      const section = progress.sectionId;
-      const category = await Category.findById(section.categoryId).lean();
-      const topic = await Topic.findById(category?.topicId).lean();
-
-      enrichedReviews.push({
-        _id: progress._id,
-        sectionId: section._id,
-        sectionName: section.name,
-        sectionSlug: section.slug,
-        categoryName: category?.name,
-        categorySlug: category?.slug,
-        topicName: topic?.name,
-        topicSlug: topic?.slug,
-        reviewData: progress.reviewData
-      });
-    }
-
-    // Sort by next review date (earliest first)
-    enrichedReviews.sort((a, b) => 
-      new Date(a.reviewData.nextReview) - new Date(b.reviewData.nextReview)
-    );
+    // Use aggregation to avoid N+1 queries (was causing major performance issues)
+    const enrichedReviews = await Progress.aggregate([
+      {
+        $match: {
+          userId: userId.toString(),
+          completed: true,
+          'reviewData.nextReview': { $lte: new Date() }
+        }
+      },
+      {
+        $lookup: {
+          from: 'sections',
+          localField: 'sectionId',
+          foreignField: '_id',
+          as: 'section'
+        }
+      },
+      { $unwind: { path: '$section', preserveNullAndEmptyArrays: false } },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'section.categoryId',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'topics',
+          localField: 'category.topicId',
+          foreignField: '_id',
+          as: 'topic'
+        }
+      },
+      { $unwind: { path: '$topic', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          sectionId: '$section._id',
+          sectionName: '$section.title',
+          sectionSlug: '$section.slug',
+          categoryName: '$category.name',
+          categorySlug: '$category.slug',
+          topicName: '$topic.name',
+          topicSlug: '$topic.slug',
+          reviewData: 1
+        }
+      },
+      { $sort: { 'reviewData.nextReview': 1 } }
+    ]);
 
     res.json({ reviews: enrichedReviews });
   } catch (error) {
@@ -436,7 +454,7 @@ export const getDueReviews = async (req, res) => {
 export const updateReview = async (req, res) => {
   try {
     const { topicSlug, sectionSlug, quality } = req.body;
-    
+
     // Validate quality (1-5)
     if (quality < 1 || quality > 5) {
       return res.status(400).json({ message: 'Quality must be between 1 and 5' });
@@ -504,8 +522,8 @@ export const updateReview = async (req, res) => {
 
     await progress.save();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       reviewData: progress.reviewData
     });
 
@@ -518,7 +536,7 @@ export const updateReview = async (req, res) => {
 export const toggleCategoryCompletion = async (req, res) => {
   try {
     const { topicSlug, categorySlug, completed } = req.body;
-    
+
     // Get user ID
     let userId;
     if (req.user) {
@@ -537,25 +555,25 @@ export const toggleCategoryCompletion = async (req, res) => {
     // 2. Find all sections
     const sections = await Section.find({ categoryId: category._id }).lean();
     if (sections.length === 0) {
-        return res.json({ success: true, message: 'No sections to update' });
+      return res.json({ success: true, message: 'No sections to update' });
     }
 
     // 3. Update Progress for all sections
     const operations = sections.map(section => ({
-        updateOne: {
-            filter: { userId, sectionId: section._id },
-            update: { 
-                $set: { 
-                    completed: completed,
-                    lastAccessed: Date.now()
-                } 
-            },
-            upsert: true
-        }
+      updateOne: {
+        filter: { userId, sectionId: section._id },
+        update: {
+          $set: {
+            completed: completed,
+            lastAccessed: Date.now()
+          }
+        },
+        upsert: true
+      }
     }));
 
     if (operations.length > 0) {
-        await Progress.bulkWrite(operations);
+      await Progress.bulkWrite(operations);
     }
 
     res.json({ success: true, completed });
@@ -585,35 +603,35 @@ export const toggleTopicCompletion = async (req, res) => {
     // 2. Find all categories and sections
     const categories = await Category.find({ topicId: topic._id }).lean();
     const categoryIds = categories.map(c => c._id);
-    
+
     // Sections belonging to these categories OR directly to the topic (if any)
-    const sections = await Section.find({ 
-        $or: [
-            { categoryId: { $in: categoryIds } },
-            { topicId: topic._id }
-        ]
+    const sections = await Section.find({
+      $or: [
+        { categoryId: { $in: categoryIds } },
+        { topicId: topic._id }
+      ]
     });
 
     if (sections.length === 0) {
-        return res.json({ success: true, message: 'No sections to update' });
+      return res.json({ success: true, message: 'No sections to update' });
     }
 
     // 3. Update Progress
     const operations = sections.map(section => ({
-        updateOne: {
-            filter: { userId, sectionId: section._id },
-            update: { 
-                $set: { 
-                    completed: completed,
-                    lastAccessed: Date.now()
-                } 
-            },
-            upsert: true
-        }
+      updateOne: {
+        filter: { userId, sectionId: section._id },
+        update: {
+          $set: {
+            completed: completed,
+            lastAccessed: Date.now()
+          }
+        },
+        upsert: true
+      }
     }));
 
     if (operations.length > 0) {
-        await Progress.bulkWrite(operations);
+      await Progress.bulkWrite(operations);
     }
 
     res.json({ success: true, completed });

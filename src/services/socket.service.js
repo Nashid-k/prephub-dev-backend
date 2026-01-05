@@ -5,6 +5,17 @@ let io;
 const connectedUsers = new Map(); // userId -> { socketId, userData }
 const activeVisitors = new Set(); // track total active connections including guests
 
+// Simple throttle implementation (broadcasts max once per 5 seconds)
+let lastBroadcast = 0;
+const BROADCAST_THROTTLE_MS = 5000;
+
+const throttledBroadcastStats = () => {
+    const now = Date.now();
+    if (now - lastBroadcast < BROADCAST_THROTTLE_MS) return;
+    lastBroadcast = now;
+    broadcastStats();
+};
+
 export const initSocket = (server) => {
     const allowedOrigins = [
         'http://localhost:5173',
@@ -50,8 +61,8 @@ export const initSocket = (server) => {
             socket.join(`user:${socket.user.id}`);
         }
 
-        // Broadcast stats only to connected clients to save bandwidth (throttle this in prod)
-        broadcastStats();
+        // Throttled broadcast to prevent storm on rapid connects/disconnects
+        throttledBroadcastStats();
 
         socket.on('disconnect', () => {
             console.log(`🔌 Disconnected: ${socket.id}`);
@@ -59,7 +70,7 @@ export const initSocket = (server) => {
             if (socket.user) {
                 connectedUsers.delete(socket.user.id);
             }
-            broadcastStats();
+            throttledBroadcastStats();
         });
 
         // Ping (Latency check)

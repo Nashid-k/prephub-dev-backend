@@ -51,4 +51,7 @@ const topicSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Critical index for slug lookups (used by most API endpoints)
+topicSchema.index({ slug: 1 });
+
 export default mongoose.model('Topic', topicSchema);
