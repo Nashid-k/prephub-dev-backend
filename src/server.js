@@ -3,7 +3,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http'; // Import http
 import connectDB from './config/database.js';
-import { initSocket } from './services/socket.service.js'; // Import socket service
+import { initSocket } from './services/socket.service.js';
+import { vectorService } from './services/vector.service.js';
+import { initWorkers } from './services/queue.service.js';
 
 // Import routes
 import aiRoutes from './routes/ai.routes.js';
@@ -120,6 +122,10 @@ const startServer = async () => {
     // Initialize Socket.io
     initSocket(httpServer);
     console.log('🔌 Socket.io initialized');
+
+    // 100x Services (Async initialization)
+    vectorService.connect().catch(err => console.error('Vector DB Init Failed:', err.message));
+    initWorkers();
 
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT}`);
