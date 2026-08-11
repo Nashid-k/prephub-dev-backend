@@ -1,0 +1,56 @@
+### PrepHub Real-Time Workspace REST API Spec
+@baseUrl = http://localhost:5000/api
+
+### 1. User Registration
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Alex Mercer",
+  "email": "alex@prephub.dev",
+  "password": "SecurePassword123"
+}
+
+### 2. User Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alex@prephub.dev",
+  "password": "SecurePassword123"
+}
+
+### 3. Retrieve Workspace Active Rooms
+GET {{baseUrl}}/rooms
+Authorization: Bearer <your_jwt_token_here>
+
+### 4. Create Workspace Room
+POST {{baseUrl}}/rooms/create
+Content-Type: application/json
+Authorization: Bearer <your_jwt_token_here>
+
+{
+  "roomName": "System Design Prep Room",
+  "topic": "Microservices Sync"
+}
+
+### 5. Execute Code in Secure Docker Sandbox
+POST {{baseUrl}}/sandbox/run
+Content-Type: application/json
+Authorization: Bearer <your_jwt_token_here>
+
+{
+  "language": "javascript",
+  "code": "console.log('Hello PrepHub compiler!');"
+}
+
+### 6. Query Gemini AI Reviewer for Complexity analysis
+POST {{baseUrl}}/ai/review
+Content-Type: application/json
+Authorization: Bearer <your_jwt_token_here>
+
+{
+  "code": "function findMax(arr) { return Math.max(...arr); }",
+  "language": "javascript",
+  "taskContext": "Find maximum value in an array"
+}
