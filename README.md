@@ -1,69 +1,64 @@
-<!-- ══════════════════════════════════════════════════════════════════ -->
-<!--                     NASHID K  —  PREPHUB BACKEND                   -->
-<!-- ══════════════════════════════════════════════════════════════════ -->
+# PrepHub — Backend, Realtime Services & Code Runner
 
-# 📡 PrepHub Backend — Real-Time Collaborative API Engine
+The PrepHub backend is a multi-component Node.js system for a coding-practice and learning application. It combines an Express API with realtime collaboration services, background jobs, vector-search integration and a separately packaged code-runner service.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Node.js-20.x-green?style=flat-square&logo=nodedotjs" alt="Node" />
-  &nbsp;
-  <img src="https://img.shields.io/badge/Express-4.x-lightgrey?style=flat-square&logo=express" alt="Express" />
-  &nbsp;
-  <img src="https://img.shields.io/badge/Yjs-Collab-blue?style=flat-square" alt="Yjs" />
-  &nbsp;
-  <img src="https://img.shields.io/badge/WebSockets-WS-orange?style=flat-square" alt="WebSockets" />
-  &nbsp;
-  <img src="https://img.shields.io/badge/Docker-Containers-blue?style=flat-square&logo=docker" alt="Docker" />
-</p>
+## API surface
 
-<p align="center">
-  <strong>The high-performance API server powering PrepHub, managing real-time collaborative coding, sandbox compilation runners, and Gemini-based reviews.</strong>
-</p>
+The main Express application mounts these route groups:
 
----
+| Base path | Responsibility |
+| --- | --- |
+| `/api/ai` | AI-assisted learning workflows |
+| `/api/compiler` | Compiler and code-execution workflows |
+| `/api/curriculum` | Curriculum and learning content |
+| `/api/category` | Category data |
+| `/api/progress` | Learner progress |
+| `/api/test-cases` | Test-case workflows |
+| `/api` | Search endpoints |
+| `/api/auth` | Authentication |
+| `/api/bookmarks` | Saved learning items |
+| `/api/recommendations` | Recommendations |
+| `/api/activity` | Learner activity |
+| `/api/onboarding` | Onboarding |
+| `/api/health` | Health check |
 
-## 📌 Project Overview
-The backend server coordinates secure operations for the PrepHub ecosystem, providing real-time document sync, isolated code execution, and database modeling for developers practicing interview questions.
+## System components
 
-### ✨ Core Capabilities
-*   **Real-time Synchronization:** Built-in WebSocket server integrated with Yjs CRDTs for lag-free collaborative code editing.
-*   **Secure Code Sandbox:** Runs compiler containers using isolated Docker scripts to run user code safely.
-*   **AI Reviewer Engine:** Orchestrates Gemini Pro models to inspect user answers, analyze time complexity (Big O), and suggest optimizations.
-*   **Structured Schemas:** MongoDB models built with Mongoose validation for user session, test suite, and task metrics tracking.
+- **Express API:** application routes, validation, security middleware and database access
+- **Realtime services:** Socket.IO and Yjs-related services in separately packaged service directories
+- **Background processing:** BullMQ and Redis integration
+- **Vector search:** Qdrant client integration
+- **Code runner:** separate service with its own package and Docker configuration
+- **AI integrations:** Google Generative AI and Groq SDK dependencies
 
----
+## Stack
 
-## 📂 Repository Structure
+Node.js, Express 4, MongoDB/Mongoose, Socket.IO, Yjs, Redis, BullMQ, Qdrant, Docker, Google Generative AI and Groq.
 
-```text
-├── code-runner/  # Isolated execution environments
-├── ws-server/    # WebSockets and Yjs collaboration servers
-├── src/          # API controller directories, schemas, and routes
-├── docker-compose.yml # Container orchestrations
-└── server.js     # Express app entry point
+## Run the main API locally
+
+```bash
+git clone https://github.com/Nashid-k/prephub-dev-backend.git
+cd prephub-dev-backend
+npm install
 ```
 
----
+Create a local `.env` file with the variables required by your deployment. At minimum, configure the database, server port and credentials for any external services enabled in your environment. Keep all real credentials out of Git.
 
-## ⚙️ Development Setup
+```bash
+npm run dev
+```
 
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/Nashid-k/prephub-dev-backend.git
-   cd prephub-dev-backend
-   ```
-2. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Configure Environment:**
-   Create a `.env` file in the root based on `.env.example`:
-   ```env
-   PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/prephub
-   GEMINI_API_KEY=your_gemini_key
-   ```
-4. **Boot Server:**
-   ```bash
-   npm run start
-   ```
+The main API defaults to port `5000`. The repository also contains separate packages for realtime and code-runner services; consult their individual README files and Dockerfiles when running the complete system.
+
+## Useful commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the main API with nodemon |
+| `npm start` | Start the main API |
+| `npm run seed` | Run the main seed script |
+
+## Security
+
+Code execution and collaborative services should be deployed with isolated runtime permissions, restricted network access, resource limits and validated inputs. Do not expose runner containers directly to untrusted clients.
